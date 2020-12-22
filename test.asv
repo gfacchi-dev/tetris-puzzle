@@ -32,7 +32,7 @@ labels = bwlabel(imf);
 imagesc(labels);
 
 
-values = double(reshape(imycbcr(:,:,2:3), x*y, 2));
+values = double(reshape(imConc, x*y, 8));
 labels = reshape(labels, x*y, 1);
 
 cv = cvpartition(labels, "Holdout", 0.2);
@@ -44,10 +44,6 @@ tsset = cv.test(1);
 train_values = values(trset,:);
 test_values=values(tsset,:);
 
-train_labels = labels(trset);
-test_labels = labels(tsset);
+classifier_bayes = fitcnb(train_values,train_labels);
 
-%classifier_bayes = fitcnb(train_values,train_labels);
-
-save('classifier_Bayes.mat', 'classifier_bayes');
 
