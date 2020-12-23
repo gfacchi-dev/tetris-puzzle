@@ -23,23 +23,26 @@ se = strel("square", 30);
 predicted = imerode(predicted, se);
 figure, imshow(predicted);
 
-props = regionprops(logical(bwlabel(predicted)), "Centroid", "Eccentricity", "Circularity");
+labeled_scene = bwlabel(predicted);
+labels = unique(labeled_scene);
 scene_props = [];
-for i=1:length(props)
-    scene_props = [scene_props; props(i).Centroid props(i).Eccentricity props(i).Circularity];
+for i = 1:length(labels)
+    sup = regionprops(labeled_scene == labels(i), "Centroid", "Eccentricity", "Circularity");
+    scene_props = [scene_props; sup.Centroid sup.Eccentricity sup.Circularity labels(i)];
 end
 
 % SCHEMA
 imscheme = rgb2gray(im2double(imread("S01.jpg")));
 mask = imscheme > 0.39;
 mask = medfilt2(mask, [7 7]);
-labels = bwlabel(mask);
-props = regionprops(logical(labels), "Centroid", "Eccentricity", "Circularity");
+labeled_scheme = bwlabel(mask);
+labels = unique(labeled_scheme);
 scheme_props = [];
-for i=1:length(props)
-    scheme_props = [scheme_props; props(i).Centroid props(i).Eccentricity props(i).Circularity];
+for i = 1:length(labels)
+    sup = regionprops(labeled_scheme == labels(i), "Centroid", "Eccentricity", "Circularity");
+    scheme_props = [scheme_props; sup.Centroid sup.Eccentricity sup.Circularity labels(i)];
 end
 
 % CLUSTERIZATION
-is_scheme = [zeros(length(scene_props), 1); ones(length(scheme_props), 1)];
-all_props = [scene_props; scheme_props];
+% is_scheme = [zeros(length(scene_props), 1); ones(length(scheme_props), 1)];
+% all_props = [scene_props; scheme_props];
