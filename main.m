@@ -21,7 +21,7 @@ predicted = imclose(predicted, se);
 predicted = medfilt2(predicted, [19 19]);
 se = strel("square", 30);
 predicted = imerode(predicted, se);
-figure, imshow(predicted);
+% figure, imshow(predicted);
 
 labeled_scene = bwlabel(predicted);
 labels = unique(labeled_scene);
@@ -38,11 +38,11 @@ mask = medfilt2(mask, [7 7]);
 labeled_scheme = bwlabel(mask);
 labels = unique(labeled_scheme);
 scheme_props = [];
-for i = 1:length(labels)
+for i = 3:length(labels)
     sup = regionprops(labeled_scheme == labels(i), "Centroid", "Eccentricity", "Circularity");
     scheme_props = [scheme_props; sup.Centroid sup.Eccentricity sup.Circularity labels(i)];
 end
 
 % CLUSTERIZATION
-% is_scheme = [zeros(length(scene_props), 1); ones(length(scheme_props), 1)];
-% all_props = [scene_props; scheme_props];
+is_scheme = [zeros(length(scene_props), 1); ones(length(scheme_props), 1)];
+all_props = [scene_props; scheme_props];
