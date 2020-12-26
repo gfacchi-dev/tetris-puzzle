@@ -22,9 +22,8 @@ function [values, labels] = training_segmentation(imrgb)
     labels = bwlabel(imf);
     labels(labels~=0) = 1;
     
-    % figure, imshow(imf);
-    
     values = double(cat(3, imrgb(:, :, 2:3), imycbcr));
+    % values = double(cat(3, imycbcr(:,:,2:3), imhsv(:,:,2)));
     [r, c, ch] = size(values);
     values = reshape(values, r*c, ch);
     labels = reshape(labels, r*c, 1);
