@@ -14,7 +14,7 @@ im2 = imread("R02.jpg");
 [p2, l2] = training_shapes(im2);
 train_props_values = [p1; p2];
 train_props_labels = [l1; l2];
-classifier_cart = fitctree(train_props_values, train_props_labels);
+classifier_knn = fitcknn(train_props_values, train_props_labels);
 
 % save("classifier_bayes.mat", "classifier_bayes");
-save("classifier_cart.mat", "classifier_cart");
+save("classifier_knn.mat", "classifier_knn");

@@ -1,3 +1,5 @@
+load("classifier_knn.mat");
+
 imrgb = imread("R01.jpg");
 imycbcr = rgb2ycbcr(imrgb);
 imhsv = rgb2hsv(imrgb);
@@ -20,10 +22,10 @@ imf = imclose(imf, se);
 imf = imerode(imf, se);
 imf = medfilt2(imf,[7 7]);
 
-label = 9;
+label = 10;
+labeled_im = bwlabel(imf);
 corners = detectHarrisFeatures(labeled_im == label, "MinQuality", 0.5, "FilterSize", 23);
-disp(corners);
-figure
-imshow(labeled_im == label)
-hold on
-plot(corners.selectStrongest(50));
+p = regionprops(labeled_im == label, "all");
+props = [corners.Count p.Circularity p.Eccentricity p.Extent];
+
+predicted = predict(classifier_knn, props);
