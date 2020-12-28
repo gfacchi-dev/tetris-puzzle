@@ -2,6 +2,7 @@ clear all;
 close all;
 
 load("classifier_bayes.mat");
+load("classifier_knn.mat");
 
 % SCENA
 image = imread("P03.jpg");
@@ -31,17 +32,30 @@ predicted = reshape(predicted, r, c);
 se = strel("square", 10);
 predicted = imclose(predicted, se);
 predicted = medfilt2(predicted, [19 19]);
-se = strel("square", 20);
+se = strel("square", 25);
 predicted = imerode(predicted, se);
+se = strel("square", 15);
+
 predicted = imdilate(predicted, se);
+
+
 % figure, imshow(predicted);
 
 labeled_scene = bwlabel(predicted);
 scene_labels = unique(labeled_scene);
 scene_props = [];
 for i = 2:length(scene_labels)
-    props = regionprops(labeled_scene == scene_labels(i), "Circularity", "Extent", "Eccentricity", "Solidity");
-    scene_props = [scene_props; props.Circularity props.Eccentricity props.Extent props.Solidity scene_labels(i)];
+    im_props = regionprops(labeled_scene == scene_labels(i), "Circularity", "Solidity", "Eccentricity", "BoundingBox", "Area", "Perimeter");
+    subImage = imcrop(labeled_scene== scene_labels(i),im_props.BoundingBox);
+    subImage = padarray(subImage, [100 100], 0 , 'both');
+    se = strel("square", 15);
+subImage = imerode(subImage, se);
+    corners = detectHarrisFeatures(subImage, "MinQuality", 0.45, "FilterSize", 31);
+    im_props = regionprops(subImage, "All");
+  %  figure,imshow(subImage);
+    %scene_props = [scene_props; im_props.Eccentricity numel(im_props.ConvexHull)/im_props.Perimeter   im_props.Solidity  im_props.Circularity im_props.EulerNumber  im_props.Area/im_props.Perimeter^2 scene_labels(i)];
+   scene_props = [scene_props;  im_props.Eccentricity im_props.Area/im_props.Perimeter^2  im_props.Solidity im_props.Extent scene_labels(i)]
+    %
 end
 
 % SCHEMA
@@ -53,13 +67,21 @@ scheme_labels = unique(labeled_scheme);
 scheme_props = [];
 
 for i = 3:length(scheme_labels)
-    props = regionprops(labeled_scheme == scheme_labels(i), "Circularity", "Extent", "Eccentricity", "Perimeter");
+    props = regionprops(labeled_scheme == scheme_labels(i), "Circularity", "Extent", "Eccentricity", "Perimeter","BoundingBox");
+    
     scheme_props = [scheme_props; props.Circularity props.Eccentricity props.Extent props.Perimeter scheme_labels(i)];
 end
 
 % CLUSTERIZATION
 is_scheme = [ones(length(scheme_props), 1); zeros(length(scene_props), 1);];
-all_props = [scheme_props; scene_props];
+%all_props = [scheme_props; scene_props];
+
+for i=1:length(scene_props)
+    props = scene_props(i,:)
+    label=predict(classifier_knn,props(1:end-1));
+    figure, imshow(labeled_scene==props(end)), title(label);
+
+end
 
 % n_clusters = 9;% max(max(length(scheme_labels) - 2, scene_labels));
 % idx = kmeans(all_props(:,1:end-1), n_clusters);

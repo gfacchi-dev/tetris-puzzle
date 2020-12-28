@@ -10,11 +10,11 @@ im2 = imread("R02.jpg");
 % classifier_bayes = fitcnb(train_values, train_labels);
 
 % Shapes
-[p1, l1] = training_shapes(im1);
-[p2, l2] = training_shapes(im2);
-train_props_values = [p1; p2];
-train_props_labels = [l1; l2];
-classifier_knn = fitcknn(train_props_values, train_props_labels);
+[p1, l1] = getData();
+
+train_props_values =p1;
+train_props_labels =l1;
+classifier_knn = fitcknn(train_props_values, train_props_labels, 'NumNeighbors' , 1);
 
 % save("classifier_bayes.mat", "classifier_bayes");
 save("classifier_knn.mat", "classifier_knn");

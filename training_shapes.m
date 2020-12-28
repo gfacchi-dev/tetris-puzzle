@@ -1,4 +1,4 @@
-function [props, labels] = training_shapes(imrgb)
+function [props, labels] = training_shapes(imrgb, imageNumber)
     imycbcr = rgb2ycbcr(imrgb);
     imhsv = rgb2hsv(imrgb);
 
@@ -25,13 +25,33 @@ function [props, labels] = training_shapes(imrgb)
     cclabels = unique(labeled_im);
     props = [];
     labels = [];
-    
-    for i=2:length(cclabels)
-        if cclabels(i) ~= 9
-            corners = detectHarrisFeatures(labeled_im == cclabels(i), "MinQuality", 0.5, "FilterSize", 23);
-            im_props = regionprops(labeled_im == cclabels(i), "all");
+    j=0;
+    if(imageNumber == 1)
+        j=2;
+    else
+        j=1;
+    end
+    for i=j:length(cclabels)
+        %figure;imshow(labeled_im == cclabels(i));title(cclabels(i)); 
+        
+            corners = detectHarrisFeatures(labeled_im == cclabels(i), "MinQuality", 0.7, "FilterSize", 15);
+            im_props = regionprops(labeled_im == cclabels(i), "Circularity","Eccentricity","Extent");
+            
             props = [props; corners.Count im_props.Circularity im_props.Eccentricity im_props.Extent];
-            labels = [labels; cclabels(i)];
-        end
+            if(imageNumber==1)
+                if(i==8||i==10)
+                    labels=[labels;cclabels(i-1)];
+                else
+                    labels = [labels;cclabels(i)];
+                end
+            elseif(i<11)
+                  if(i == 2 || i==4)
+             labels = [labels; cclabels(11-i+1)];
+            else
+                labels = [labels;cclabels(11-i)];
+            end
+            end
+          
+            
     end
 end
