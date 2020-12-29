@@ -5,7 +5,7 @@ load("classifier_bayes.mat");
 load("classifier_knn.mat");
 
 % SCENA
-image = imread("P05.jpg");
+image = imread("P04.jpg");
 imrgb= imresize(image, 1);
 imycbcr = rgb2ycbcr(imrgb);
 imhsv = rgb2hsv(imrgb);
@@ -53,19 +53,30 @@ for i = 2:length(scene_labels)
    %poly reduction----------------------
     [B, L] = bwboundaries(subImage, 'noholes');
      boundary = B{1};
-
+%     figure; imshow(subImage)
+%     hold on
+%     visboundaries({boundary})
+%     xlim([min(boundary(:,2))-10 max(boundary(:,2))+10])
+%     ylim([min(boundary(:,1))-10 max(boundary(:,1))+10])
+    
     tolerance = 0.08;
-    %Ramer-Douglas-Peucker algorithm
-    p_reduced = reducepoly(boundary,tolerance);    
+    %Ramer-Douglas-P
+    p_reduced = reducepoly(boundary,tolerance);
+%     line(p_reduced(:,2),p_reduced(:,1), 'color','b','linestyle','-','linewidth',1.5, 'marker','o','markersize',5);
+%     hold off
+    
     [X, Y] = size(subImage);
     simplified = zeros(X, Y);
     simplified = roipoly(simplified, p_reduced(:,2),p_reduced(:,1));
+%     figure,subplot(1,2,1), imshow(subImage),subplot(1,2,2), imshow(simplified);
     
     %-----------------------------------------
     corners = detectHarrisFeatures(simplified, "MinQuality", 0.35, "FilterSize", 11);
     im_props = regionprops(subImage, "All");
-    scene_props = [scene_props;  corners.Count/8 im_props.Eccentricity  im_props.Area/im_props.Perimeter^2 scene_labels(i)]
-    
+    %figure,imshow(subImage);
+    %scene_props = [scene_props; im_props.Eccentricity numel(im_props.ConvexHull)/im_props.Perimeter   im_props.Solidity  im_props.Circularity im_props.EulerNumber  im_props.Area/im_props.Perimeter^2 scene_labels(i)];
+   scene_props = [scene_props;  corners.Count/8 im_props.Eccentricity  im_props.Area/im_props.Perimeter^2 scene_labels(i)]
+    %
 end
 
 % SCHEMA
