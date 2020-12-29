@@ -5,13 +5,12 @@ load("classifier_bayes.mat");
 load("classifier_knn.mat");
 
 % SCENA
-image = imread("P05.jpg");
+image = imread("P08.jpg");
 imrgb= imresize(image, 1);
 imycbcr = rgb2ycbcr(imrgb);
 imhsv = rgb2hsv(imrgb);
 
 test_values = cat(3, imrgb(:, :, 2:3), imycbcr);
-% test_values = cat(3, imycbcr(:,:,2:3), imhsv(:,:,2));
 [r, c, ch] = size(test_values);
 test_values = double(reshape(test_values, r*c, ch));
 
@@ -20,7 +19,7 @@ predicted = reshape(predicted, r, c);
 
 se = strel("square", 10);
 predicted = imclose(predicted, se);
-predicted = medfilt2(predicted, [19 19]);
+predicted = medfilt2(predicted, [21 21]);
 se = strel("square", 50);
 predicted = imerode(predicted, se);
 se = strel("square", 15);
@@ -28,7 +27,6 @@ se = strel("square", 15);
 predicted = imdilate(predicted, se);
 
 
-% figure, imshow(predicted);
 
 labeled_scene = bwlabel(predicted);
 scene_labels = unique(labeled_scene);
@@ -38,13 +36,13 @@ for i = 2:length(scene_labels)
     subImage = imcrop(labeled_scene== scene_labels(i),im_props.BoundingBox);
     subImage = padarray(subImage, [100 100], 0 , 'both');
   
-    %subImage = imresize(subImage, 0.3, 'nearest');
    %poly reduction----------------------
     [B, L] = bwboundaries(subImage, 'noholes');
      boundary = B{1};
 
-    tolerance = 0.08;
+   
     %Ramer-Douglas-Peucker algorithm
+     tolerance = 0.08;
     p_reduced = reducepoly(boundary,tolerance);    
     [X, Y] = size(subImage);
     simplified = zeros(X, Y);
@@ -53,12 +51,12 @@ for i = 2:length(scene_labels)
     %-----------------------------------------
     corners = detectHarrisFeatures(simplified, "MinQuality", 0.35, "FilterSize", 11);
     im_props = regionprops(subImage, "Eccentricity", "Area", "Perimeter");
-    scene_props = [scene_props;  corners.Count/8 im_props.Eccentricity  im_props.Area/im_props.Perimeter^2 scene_labels(i)];
+    scene_props = [scene_props;  corners.Count/8 im_props.Eccentricity  im_props.Area/im_props.Perimeter^2 scene_labels(i)]
     
 end
 
 % SCHEMA
-imscheme = rgb2gray(im2double(imread("S06.jpg")));
+imscheme = rgb2gray(im2double(imread("S02.jpg")));
 mask = imscheme > 0.39;
 mask = medfilt2(mask, [7 7]);
 labeled_scheme = bwlabel(mask);
@@ -70,34 +68,37 @@ for i = 3:length(scheme_labels)
     subImage = imcrop(labeled_scheme == scheme_labels(i),im_props.BoundingBox);
     subImage = padarray(subImage, [100 100], 0 , 'both');
   
-    %subImage = imresize(subImage, 0.3, 'nearest');
    %poly reduction----------------------
-    [B, L] = bwboundaries(subImage, 'noholes');
+     [B, L] = bwboundaries(subImage, 'noholes');
      boundary = B{1};
 
-    tolerance = 0.08;
+   
     %Ramer-Douglas-Peucker algorithm
-    p_reduced = reducepoly(boundary,tolerance);    
-    [X, Y] = size(subImage);
-    simplified = zeros(X, Y);
-    simplified = roipoly(simplified, p_reduced(:,2),p_reduced(:,1));
-    
+     tolerance = 0.08;
+     p_reduced = reducepoly(boundary,tolerance);    
+     [X, Y] = size(subImage);
+     simplified = zeros(X, Y);
+     simplified = roipoly(simplified, p_reduced(:,2),p_reduced(:,1));    
     %-----------------------------------------
     corners = detectHarrisFeatures(simplified, "MinQuality", 0.35, "FilterSize", 11);
     im_props = regionprops(subImage,  "Eccentricity", "Area", "Perimeter");
-    scheme_props = [scheme_props;  corners.Count/8 im_props.Eccentricity  im_props.Area/im_props.Perimeter^2 scene_labels(i)];
+    scheme_props = [scheme_props;  corners.Count/8 im_props.Eccentricity  im_props.Area/im_props.Perimeter^2 scheme_labels(i)];
 end
 
 for i=1:length(scene_props)
     props = scene_props(i,:);
-    label=predict(classifier_knn,props(1:end-1));
-    figure, imshow(labeled_scene==props(end)), title(label);
+    if(props(1)~=0 )
+        if(props(1) == 0.5 || props(1) == 0.75 || props(1) == 1)
+             label=predict(classifier_knn,props(1:end-1));
+            figure, imshow(labeled_scene==props(end)), title(label);
+        end
+       
+    end
 end
 
 for i=1:length(scheme_props)
       props = scheme_props(i,:);
       label=predict(classifier_knn,props(1:end-1));
       figure, imshow(labeled_scheme==props(end)), title(label);
-
 end
 
