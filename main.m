@@ -5,8 +5,8 @@ load("classifier_bayes.mat");
 load("classifier_knn.mat");
 
 % SCENA
-image = imread("P03.jpg");
-imrgb= imresize(image, 0.4);
+image = imread("P09.jpg");
+imrgb= imresize(image, 1);
 imycbcr = rgb2ycbcr(imrgb);
 imhsv = rgb2hsv(imrgb);
 
@@ -32,7 +32,7 @@ predicted = reshape(predicted, r, c);
 se = strel("square", 10);
 predicted = imclose(predicted, se);
 predicted = medfilt2(predicted, [19 19]);
-se = strel("square", 25);
+se = strel("square", 50);
 predicted = imerode(predicted, se);
 se = strel("square", 15);
 
@@ -48,13 +48,33 @@ for i = 2:length(scene_labels)
     im_props = regionprops(labeled_scene == scene_labels(i), "Circularity", "Solidity", "Eccentricity", "BoundingBox", "Area", "Perimeter");
     subImage = imcrop(labeled_scene== scene_labels(i),im_props.BoundingBox);
     subImage = padarray(subImage, [100 100], 0 , 'both');
-    se = strel("square", 15);
-subImage = imerode(subImage, se);
-    corners = detectHarrisFeatures(subImage, "MinQuality", 0.45, "FilterSize", 31);
+  
+    %subImage = imresize(subImage, 0.3, 'nearest');
+   %poly reduction----------------------
+    [B, L] = bwboundaries(subImage, 'noholes');
+     boundary = B{1};
+%     figure; imshow(subImage)
+%     hold on
+%     visboundaries({boundary})
+%     xlim([min(boundary(:,2))-10 max(boundary(:,2))+10])
+%     ylim([min(boundary(:,1))-10 max(boundary(:,1))+10])
+    
+    tolerance = 0.08;
+    p_reduced = reducepoly(boundary,tolerance);
+%     line(p_reduced(:,2),p_reduced(:,1), 'color','b','linestyle','-','linewidth',1.5, 'marker','o','markersize',5);
+%     hold off
+    
+    [X, Y] = size(subImage);
+    simplified = zeros(X, Y);
+    simplified = roipoly(simplified, p_reduced(:,2),p_reduced(:,1));
+%     figure,subplot(1,2,1), imshow(subImage),subplot(1,2,2), imshow(simplified);
+    
+    %-----------------------------------------
+    corners = detectHarrisFeatures(simplified, "MinQuality", 0.35, "FilterSize", 11);
     im_props = regionprops(subImage, "All");
-  %  figure,imshow(subImage);
+    %figure,imshow(subImage);
     %scene_props = [scene_props; im_props.Eccentricity numel(im_props.ConvexHull)/im_props.Perimeter   im_props.Solidity  im_props.Circularity im_props.EulerNumber  im_props.Area/im_props.Perimeter^2 scene_labels(i)];
-   scene_props = [scene_props;  im_props.Eccentricity im_props.Area/im_props.Perimeter^2  im_props.Solidity im_props.Extent scene_labels(i)]
+   scene_props = [scene_props;  corners.Count/8 im_props.Eccentricity  im_props.Area/im_props.Perimeter^2 scene_labels(i)]
     %
 end
 
