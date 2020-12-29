@@ -5,7 +5,7 @@ close all
     labels=[];
      for i=3:length(fileList)
         if(not(strcmp(fileList(i).name, ".")) && not(strcmp(fileList(i).name,"..")))
-            for j=1:8
+            for j=1:1
                 path = "./shapes/"+fileList(i).name;
                 lettera = char(fileList(i).name);
                 lettera= lettera(1);
