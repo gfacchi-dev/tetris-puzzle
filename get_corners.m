@@ -1,4 +1,4 @@
-function corners = get_corners(image, label)
+function [corners, simplified] = get_corners(image, label)
     props = regionprops(image==label,"BoundingBox");
     subImage = imcrop(image==label, props.BoundingBox);
     subImage = padarray(subImage, [20 20], 0 , 'both');

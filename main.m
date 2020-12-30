@@ -5,7 +5,7 @@ load("classifier_bayes.mat");
 load("classifier_knn.mat");
 
 % SCENA
-image = imread("P02.jpg");
+image = imread("P01.jpg");
 imrgb= imresize(image, 1);
 R = imrgb(:,:,1);
 G = imrgb(:,:,2);
@@ -59,7 +59,7 @@ for i = 2:length(scene_labels)
 end
 
 % SCHEMA
-imschemergb = im2double(imread("S04.jpg"));
+imschemergb = im2double(imread("S06.jpg"));
 imscheme = rgb2gray(imschemergb);
 mask = imscheme > 0.39;
 mask = medfilt2(mask, [7 7]);
@@ -113,22 +113,43 @@ end
 for i=1:length(scheme_predicted)
     for j=1:length(scene_predicted)
         if(scheme_predicted(i, 5) == scene_predicted(j, 5))
-            scene_res_props = regionprops(labeled_scene == scene_predicted(j, 4), "BoundingBox", "MaxFeretProperties");
-            scheme_res_props = regionprops(labeled_scheme == scheme_predicted(i, 4), "BoundingBox", "MaxFeretProperties", "Centroid");
-        
+            scene_res_props = regionprops(labeled_scene == scene_predicted(j, 4), "BoundingBox", "MaxFeretProperties", "Orientation","Centroid");
+            scheme_res_props = regionprops(labeled_scheme == scheme_predicted(i, 4), "BoundingBox", "MaxFeretProperties", "Centroid", "Orientation");
+            orientationDiff = scene_res_props.Orientation - scheme_res_props.Orientation
+            
             scaleF = scheme_res_props.MaxFeretDiameter / scene_res_props.MaxFeretDiameter;
             subImageMask = imcrop(labeled_scene== scene_predicted(j, 4), scene_res_props.BoundingBox);
             subImage = imcrop(image, scene_res_props.BoundingBox);
             
             color_region(subImage, subImageMask);
             
-            schemeSubImage = imcrop(labeled_scheme== scheme_predicted(i, 4), scheme_res_props.BoundingBox);
+                schemeSubImage = imcrop(labeled_scheme== scheme_predicted(i, 4), scheme_res_props.BoundingBox);
+                immagineScena = imresize(subImageMask, scaleF);
+
+                [ angle, mirror] =  bruteForce(immagineScena, schemeSubImage, scene_predicted(j, 5));
+                 if(mirror== 1)
+                    subImageMask = flip(subImageMask,2);
+                    subImage = flip(subImage,2);
+                 end
             
-            imRotated = imrotate(subImage, -(scheme_res_props.MaxFeretAngle - scene_res_props.MaxFeretAngle));
-            maskRotated = imrotate(subImageMask, -(scheme_res_props.MaxFeretAngle - scene_res_props.MaxFeretAngle));
-            imRotated = imresize(imRotated, scaleF);
-            maskRotated = imresize(maskRotated, scaleF);
-            piece = color_region(imRotated, maskRotated);
+%             movingRegistered = imwarp(uint8(subImageMask),tform,'OutputView',imref2d(size(uint8(schemeSubImage))));
+         
+%             imshowpair(uint8(schemeSubImage), tform,'Scaling','joint')
+            
+             maskRotated = imrotate(subImageMask,angle);
+              imRotated = imrotate(subImage, angle);
+%             angle_props = regionprops(maskRotated, "MaxFeretProperties");
+%             
+%             disp("angolo schema"+ scheme_res_props.MaxFeretAngle);
+%             disp("angolo ruotata"+ angle_props.MaxFeretAngle);
+             imRotated = imresize(imRotated, scaleF);
+             maskRotated = imresize(maskRotated, scaleF);
+             %bruteForce(maskRotated, schemeSubImage,scene_predicted(j, 5));
+
+             piece = color_region(imRotated, maskRotated);
+%             figure, subplot(1,2,1), imshow(labeled_scheme == scheme_predicted(i, 4)), hold on,plot(scheme_res_props.Centroid(1),scheme_res_props.Centroid(2), "r*");
+%             subplot(1,2,2), imshow(imRotated), hold on,plot(scene_res_props.Centroid(1),scene_res_props.Centroid(2), "r*");
+            
             
             % Translation
             up = round(scheme_res_props.Centroid(2) - size(imRotated, 1) / 2);
@@ -140,6 +161,7 @@ for i=1:length(scheme_predicted)
             sup(up:bottom-1, left:right-1, :) = sup(up:bottom-1, left:right-1, :) .* double(1 - maskRotated);
             sup(up:bottom-1, left:right-1, :) = sup(up:bottom-1, left:right-1, :) + piece;
             figure, imshow(sup)
+                        
         end    
     end
 end
