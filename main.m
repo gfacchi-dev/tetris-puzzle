@@ -117,12 +117,18 @@ for i=1:length(scheme_predicted)
             scheme_res_props = regionprops(labeled_scheme == scheme_predicted(i, 4), "BoundingBox", "MaxFeretProperties", "Centroid");
         
             scaleF = scheme_res_props.MaxFeretDiameter / scene_res_props.MaxFeretDiameter;
-            subImage = imcrop(labeled_scene== scene_predicted(j, 4), scene_res_props.BoundingBox);
+            subImageMask = imcrop(labeled_scene== scene_predicted(j, 4), scene_res_props.BoundingBox);
+            subImage = imcrop(image, scene_res_props.BoundingBox);
+            
+            color_region(subImage, subImageMask);
             
             schemeSubImage = imcrop(labeled_scheme== scheme_predicted(i, 4), scheme_res_props.BoundingBox);
             
             imRotated = imrotate(subImage, -(scheme_res_props.MaxFeretAngle - scene_res_props.MaxFeretAngle));
+            maskRotated = imrotate(subImageMask, -(scheme_res_props.MaxFeretAngle - scene_res_props.MaxFeretAngle));
             imRotated = imresize(imRotated, scaleF);
+            maskRotated = imresize(maskRotated, scaleF);
+            piece = color_region(imRotated, maskRotated);
             
             % Translation
             up = round(scheme_res_props.Centroid(2) - size(imRotated, 1) / 2);
@@ -130,9 +136,16 @@ for i=1:length(scheme_predicted)
             left = round(scheme_res_props.Centroid(1) - size(imRotated, 2) / 2);
             right = round(scheme_res_props.Centroid(1) + size(imRotated, 2) / 2);
             
-            sup = imscheme;
-            sup(up:bottom-1, left:right-1) = sup(up:bottom-1, left:right-1) .* (1 - imRotated);
+            sup = imschemergb;
+            sup(up:bottom-1, left:right-1, :) = sup(up:bottom-1, left:right-1, :) .* double(1 - maskRotated);
+            sup(up:bottom-1, left:right-1, :) = sup(up:bottom-1, left:right-1, :) + piece;
             figure, imshow(sup)
         end    
     end
+end
+
+function region = color_region(im, mask)
+    mask3 = double(repmat(mask,[1,1,3]));
+    region = im2double(im) .* mask3;
+    %figure, imshow(region);
 end
