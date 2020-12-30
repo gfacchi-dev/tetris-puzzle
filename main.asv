@@ -123,14 +123,17 @@ for i=1:length(scheme_predicted)
             imRotated = imrotate(subImage, -(scheme_res_props.MaxFeretAngle - scene_res_props.MaxFeretAngle));
             imRotated = imresize(imRotated, scaleF);
             
+            figure
+            subplot(1, 2, 1), imshow(im
             
-            
-%             figure, 
-%             subplot(1, 2, 1), imshow(schemeSubImage);
-%             subplot(1, 2, 2), imshow(imRotated)
+            % Translation
+%             up = round(scheme_res_props.Centroid(2) - size(imRotated, 1) / 2);
+%             bottom = round(scheme_res_props.Centroid(2) + size(imRotated, 1) / 2);
+%             left = round(scheme_res_props.Centroid(1) - size(imRotated, 2) / 2);
+%             right = round(scheme_res_props.Centroid(1) + size(imRotated, 2) / 2);
+%             
+%             sup = imscheme;
+%             sup(up:bottom-1, left:right-1) = imRotated;
         end    
     end
 end
-
-
-

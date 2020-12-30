@@ -59,7 +59,8 @@ for i = 2:length(scene_labels)
 end
 
 % SCHEMA
-imscheme = rgb2gray(im2double(imread("S04.jpg")));
+imschemergb = im2double(imread("S04.jpg"));
+imscheme = rgb2gray(imschemergb);
 mask = imscheme > 0.39;
 mask = medfilt2(mask, [7 7]);
 labeled_scheme = bwlabel(mask);
@@ -123,14 +124,15 @@ for i=1:length(scheme_predicted)
             imRotated = imrotate(subImage, -(scheme_res_props.MaxFeretAngle - scene_res_props.MaxFeretAngle));
             imRotated = imresize(imRotated, scaleF);
             
+            % Translation
+            up = round(scheme_res_props.Centroid(2) - size(imRotated, 1) / 2);
+            bottom = round(scheme_res_props.Centroid(2) + size(imRotated, 1) / 2);
+            left = round(scheme_res_props.Centroid(1) - size(imRotated, 2) / 2);
+            right = round(scheme_res_props.Centroid(1) + size(imRotated, 2) / 2);
             
-            
-%             figure, 
-%             subplot(1, 2, 1), imshow(schemeSubImage);
-%             subplot(1, 2, 2), imshow(imRotated)
+            sup = imscheme;
+            sup(up:bottom-1, left:right-1) = sup(up:bottom-1, left:right-1) .* (1 - imRotated);
+            figure, imshow(sup)
         end    
     end
 end
-
-
-
