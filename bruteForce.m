@@ -5,8 +5,10 @@ i=1;
 minValue = size(scheme2,1)* size(scheme2,2);
 minNormal = 0;
 while (i<360)
+    %process = imresize(scene, [size(scheme2,1) size(scheme2,2)]);
     process = imrotate(scene, i);
-    process = imresize(process, [size(scheme2,1) size(scheme2,2)]);
+   process = imresize(process, [size(scheme2,1) size(scheme2,2)]);
+
 
     matching = (double(process) - double(scheme2))==1;
     num = sum(matching(:) == 1);

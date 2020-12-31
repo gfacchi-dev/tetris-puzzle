@@ -5,7 +5,7 @@ load("classifier_bayes.mat");
 load("classifier_knn.mat");
 
 % SCENA
-image = imread("P01.jpg");
+image = imread("P02.jpg");
 imrgb= imresize(image, 1);
 R = imrgb(:,:,1);
 G = imrgb(:,:,2);
@@ -59,7 +59,7 @@ for i = 2:length(scene_labels)
 end
 
 % SCHEMA
-imschemergb = im2double(imread("S06.jpg"));
+imschemergb = im2double(imread("S05.jpg"));
 imscheme = rgb2gray(imschemergb);
 mask = imscheme > 0.39;
 mask = medfilt2(mask, [7 7]);
@@ -123,33 +123,30 @@ for i=1:length(scheme_predicted)
             
             color_region(subImage, subImageMask);
             
-                schemeSubImage = imcrop(labeled_scheme== scheme_predicted(i, 4), scheme_res_props.BoundingBox);
-                immagineScena = imresize(subImageMask, scaleF);
+            schemeSubImage = imcrop(labeled_scheme== scheme_predicted(i, 4), scheme_res_props.BoundingBox);
+            immagineScena = imresize(subImageMask, scaleF);
+            edgeSchema = schemeSubImage;
+            if(scene_predicted(j, 5) == 1 || scene_predicted(j, 5) == 3)
+                immagineScena = bwperim(immagineScena, 8);
+                immagineScena =imdilate(immagineScena, strel('disk',50));
 
-                [ angle, mirror] =  bruteForce(immagineScena, schemeSubImage, scene_predicted(j, 5));
-                 if(mirror== 1)
-                    subImageMask = flip(subImageMask,2);
-                    subImage = flip(subImage,2);
-                 end
-            
-%             movingRegistered = imwarp(uint8(subImageMask),tform,'OutputView',imref2d(size(uint8(schemeSubImage))));
-         
-%             imshowpair(uint8(schemeSubImage), tform,'Scaling','joint')
-            
+                edgeSchema = bwperim(schemeSubImage, 8);
+                edgeSchema =imdilate(edgeSchema, strel('disk',50));
+            end            
+
+             [ angle, mirror] =  bruteForce(immagineScena, edgeSchema, scene_predicted(j, 5));
+             if(mirror== 1)
+                subImageMask = flip(subImageMask,2);
+                subImage = flip(subImage,2);
+             end
+                     
              maskRotated = imrotate(subImageMask,angle);
               imRotated = imrotate(subImage, angle);
-%             angle_props = regionprops(maskRotated, "MaxFeretProperties");
-%             
-%             disp("angolo schema"+ scheme_res_props.MaxFeretAngle);
-%             disp("angolo ruotata"+ angle_props.MaxFeretAngle);
+
              imRotated = imresize(imRotated, scaleF);
              maskRotated = imresize(maskRotated, scaleF);
-             %bruteForce(maskRotated, schemeSubImage,scene_predicted(j, 5));
 
              piece = color_region(imRotated, maskRotated);
-%             figure, subplot(1,2,1), imshow(labeled_scheme == scheme_predicted(i, 4)), hold on,plot(scheme_res_props.Centroid(1),scheme_res_props.Centroid(2), "r*");
-%             subplot(1,2,2), imshow(imRotated), hold on,plot(scene_res_props.Centroid(1),scene_res_props.Centroid(2), "r*");
-            
             
             % Translation
             up = round(scheme_res_props.Centroid(2) - size(imRotated, 1) / 2);
