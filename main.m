@@ -54,12 +54,12 @@ for i = 2:length(scene_labels)
     %-----------------------------------------
     corners = detectHarrisFeatures(simplified, "MinQuality", 0.35, "FilterSize", 11);
     im_props = regionprops(subImage, "Eccentricity", "Area", "Perimeter");
-    scene_props = [scene_props;  corners.Count/8 im_props.Eccentricity  im_props.Area/im_props.Perimeter^2 scene_labels(i)]
+    scene_props = [scene_props;  corners.Count/8 im_props.Eccentricity  im_props.Area/im_props.Perimeter^2 scene_labels(i)];
     
 end
 
 % SCHEMA
-imschemergb = im2double(imread("S05.jpg"));
+imschemergb = im2double(imread("S04.jpg"));
 imscheme = rgb2gray(imschemergb);
 mask = imscheme > 0.39;
 mask = medfilt2(mask, [7 7]);
@@ -113,52 +113,78 @@ end
 for i=1:length(scheme_predicted)
     for j=1:length(scene_predicted)
         if(scheme_predicted(i, 5) == scene_predicted(j, 5))
-            scene_res_props = regionprops(labeled_scene == scene_predicted(j, 4), "BoundingBox", "MaxFeretProperties", "Orientation","Centroid");
-            scheme_res_props = regionprops(labeled_scheme == scheme_predicted(i, 4), "BoundingBox", "MaxFeretProperties", "Centroid", "Orientation");
-            orientationDiff = scene_res_props.Orientation - scheme_res_props.Orientation
+            scene_res_props = regionprops(labeled_scene == scene_predicted(j, 4), "BoundingBox", "MaxFeretProperties");
+            scheme_res_props = regionprops(labeled_scheme == scheme_predicted(i, 4), "BoundingBox", "MaxFeretProperties", "Centroid");
+                    
+            % Scene CROP
+            subSceneMask = imcrop(labeled_scene == scene_predicted(j, 4), scene_res_props.BoundingBox);
+            subSceneImage = imcrop(image, scene_res_props.BoundingBox);
             
+            % Scheme CROP
+            subSchemeMask = imcrop(labeled_scheme == scheme_predicted(i, 4), scheme_res_props.BoundingBox);
+                      
+            % Scene ROTATION          
+            sceneMaskRotated = imrotate(subSceneMask, -(scheme_res_props.MaxFeretAngle - scene_res_props.MaxFeretAngle));
+            sceneMaskFlipped = fliplr(subSceneMask);
+            angle = bwferet(sceneMaskFlipped, "MaxFeretProperties").MaxAngle(1);
+            sceneMaskFR = imrotate(sceneMaskFlipped, -(scheme_res_props.MaxFeretAngle - angle)); 
+            
+            subSceneRotated = imrotate(subSceneImage, -(scheme_res_props.MaxFeretAngle - scene_res_props.MaxFeretAngle));
+            subSceneFlipped = fliplr(subSceneImage);
+            subSceneFR = imrotate(subSceneFlipped, -(scheme_res_props.MaxFeretAngle - angle));
+            
+            
+            %%% ROTATIONS %%%
+            figure
+            
+            out = bwferet(sceneMaskRotated, "MaxFeretProperties");
+            subplot(2, 2, 1), h = imshow(sceneMaskRotated), title("RUOTATA  " + out.MaxAngle(1))
+            axis = h.Parent;
+            xmin = [out.MaxCoordinates{1}(1,1) out.MaxCoordinates{1}(2,1)];
+            ymin = [out.MaxCoordinates{1}(1,2) out.MaxCoordinates{1}(2,2)];
+            imdistline(axis,xmin,ymin); 
+                       
+            out = bwferet(sceneMaskFR, "MaxFeretProperties");
+            subplot(2, 2, 2), h = imshow(sceneMaskFR), title("FLIPPED E RUOTATA  " + out.MaxAngle(1))
+            axis = h.Parent;
+            xmin = [out.MaxCoordinates{1}(1,1) out.MaxCoordinates{1}(2,1)];
+            ymin = [out.MaxCoordinates{1}(1,2) out.MaxCoordinates{1}(2,2)];
+            imdistline(axis,xmin,ymin); 
+            
+            out = bwferet(subSchemeMask, "MaxFeretProperties");
+            subplot(2, 2, 3), h = imshow(subSchemeMask), title("SCHEMA  " + scheme_res_props.MaxFeretAngle)
+            axis = h.Parent;
+            xmin = [out.MaxCoordinates{1}(1,1) out.MaxCoordinates{1}(2,1)];
+            ymin = [out.MaxCoordinates{1}(1,2) out.MaxCoordinates{1}(2,2)];
+            imdistline(axis,xmin,ymin); 
+            
+            % SCALING
             scaleF = scheme_res_props.MaxFeretDiameter / scene_res_props.MaxFeretDiameter;
-            subImageMask = imcrop(labeled_scene== scene_predicted(j, 4), scene_res_props.BoundingBox);
-            subImage = imcrop(image, scene_res_props.BoundingBox);
             
-            color_region(subImage, subImageMask);
+            subSceneRotated = imresize(subSceneRotated, scaleF);
+            sceneMaskRotated = imresize(sceneMaskRotated, scaleF);
+            sceneMaskFR = imresize(sceneMaskFR, scaleF);
+                        
+%             isFlipped = (sum(sum(subSchemeMask .* sceneMaskFR)) > sum(sum(subSchemeMask .* sceneMaskRotated)));
+%              
+%             if (isFlipped)
+%                 piece = color_region(subSceneFR, sceneMaskFR);
+%             else
+%                 piece = color_region(subSceneRotated, sceneMaskRotated);
+%             end          
             
-            schemeSubImage = imcrop(labeled_scheme== scheme_predicted(i, 4), scheme_res_props.BoundingBox);
-            immagineScena = imresize(subImageMask, scaleF);
-            edgeSchema = schemeSubImage;
-            if(scene_predicted(j, 5) == 1 || scene_predicted(j, 5) == 3)
-                immagineScena = bwperim(immagineScena, 8);
-                immagineScena =imdilate(immagineScena, strel('disk',50));
+            piece = color_region(subSceneRotated, sceneMaskRotated);
 
-                edgeSchema = bwperim(schemeSubImage, 8);
-                edgeSchema =imdilate(edgeSchema, strel('disk',50));
-            end            
-
-             [ angle, mirror] =  bruteForce(immagineScena, edgeSchema, scene_predicted(j, 5));
-             if(mirror== 1)
-                subImageMask = flip(subImageMask,2);
-                subImage = flip(subImage,2);
-             end
-                     
-             maskRotated = imrotate(subImageMask,angle);
-              imRotated = imrotate(subImage, angle);
-
-             imRotated = imresize(imRotated, scaleF);
-             maskRotated = imresize(maskRotated, scaleF);
-
-             piece = color_region(imRotated, maskRotated);
-            
             % Translation
-            up = round(scheme_res_props.Centroid(2) - size(imRotated, 1) / 2);
-            bottom = round(scheme_res_props.Centroid(2) + size(imRotated, 1) / 2);
-            left = round(scheme_res_props.Centroid(1) - size(imRotated, 2) / 2);
-            right = round(scheme_res_props.Centroid(1) + size(imRotated, 2) / 2);
+            up = round(scheme_res_props.Centroid(2) - size(subSceneRotated, 1) / 2);
+            bottom = round(scheme_res_props.Centroid(2) + size(subSceneRotated, 1) / 2);
+            left = round(scheme_res_props.Centroid(1) - size(subSceneRotated, 2) / 2);
+            right = round(scheme_res_props.Centroid(1) + size(subSceneRotated, 2) / 2);
             
             sup = imschemergb;
-            sup(up:bottom-1, left:right-1, :) = sup(up:bottom-1, left:right-1, :) .* double(1 - maskRotated);
+            sup(up:bottom-1, left:right-1, :) = sup(up:bottom-1, left:right-1, :) .* double(1 - sceneMaskRotated);
             sup(up:bottom-1, left:right-1, :) = sup(up:bottom-1, left:right-1, :) + piece;
-            figure, imshow(sup)
-                        
+            % figure, imshow(sup)
         end    
     end
 end
