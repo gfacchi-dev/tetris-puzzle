@@ -5,7 +5,7 @@ load("classifier_bayes.mat");
 load("classifier_knn.mat");
 
 % SCENA
-image = imread("P02.jpg");
+image = imread("P03.jpg");
 imrgb= imresize(image, 1);
 R = imrgb(:,:,1);
 G = imrgb(:,:,2);
@@ -54,12 +54,13 @@ for i = 2:length(scene_labels)
     %-----------------------------------------
     corners = detectHarrisFeatures(simplified, "MinQuality", 0.35, "FilterSize", 11);
     im_props = regionprops(subImage, "Eccentricity", "Area", "Perimeter");
-    scene_props = [scene_props;  corners.Count/8 im_props.Eccentricity  im_props.Area/im_props.Perimeter^2 scene_labels(i)]
+    scene_props = [scene_props;  corners.Count/8 im_props.Eccentricity  im_props.Area/im_props.Perimeter^2 scene_labels(i)];
     
 end
 
 % SCHEMA
-imscheme = rgb2gray(im2double(imread("S04.jpg")));
+imschemergb = im2double(imread("S06.jpg"));
+imscheme = rgb2gray(imschemergb);
 mask = imscheme > 0.39;
 mask = medfilt2(mask, [7 7]);
 labeled_scheme = bwlabel(mask);
@@ -114,26 +115,83 @@ for i=1:length(scheme_predicted)
         if(scheme_predicted(i, 5) == scene_predicted(j, 5))
             scene_res_props = regionprops(labeled_scene == scene_predicted(j, 4), "BoundingBox", "MaxFeretProperties");
             scheme_res_props = regionprops(labeled_scheme == scheme_predicted(i, 4), "BoundingBox", "MaxFeretProperties", "Centroid");
-        
+                    
+            % Scene CROP
+            subSceneMask = imcrop(labeled_scene == scene_predicted(j, 4), scene_res_props.BoundingBox);
+            subSceneImage = imcrop(image, scene_res_props.BoundingBox);
+            
+            % Scheme CROP
+            subSchemeMask = imcrop(labeled_scheme == scheme_predicted(i, 4), scheme_res_props.BoundingBox);
+                      
+            % Scene ROTATION          
+            sceneMaskRotated = imrotate(subSceneMask, -(scheme_res_props.MaxFeretAngle - scene_res_props.MaxFeretAngle));
+            sceneMaskRotated_crop = imrotate(subSceneMask, -(scheme_res_props.MaxFeretAngle - scene_res_props.MaxFeretAngle), "crop");
+            sceneMaskFlipped = fliplr(subSceneMask);
+            angle = bwferet(sceneMaskFlipped, "MaxFeretProperties").MaxAngle(1);
+            sceneMaskFR = imrotate(sceneMaskFlipped, -(scheme_res_props.MaxFeretAngle - angle));
+            sceneMaskFR_crop = imrotate(sceneMaskFlipped, -(scheme_res_props.MaxFeretAngle - angle), "crop"); 
+            
+            subSceneRotated = imrotate(subSceneImage, -(scheme_res_props.MaxFeretAngle - scene_res_props.MaxFeretAngle));
+            subSceneFlipped = fliplr(subSceneImage);
+            subSceneFR = imrotate(subSceneFlipped, -(scheme_res_props.MaxFeretAngle - angle));
+                                                                
+            % SCALING
             scaleF = scheme_res_props.MaxFeretDiameter / scene_res_props.MaxFeretDiameter;
-            subImage = imcrop(labeled_scene== scene_predicted(j, 4), scene_res_props.BoundingBox);
             
-            schemeSubImage = imcrop(labeled_scheme== scheme_predicted(i, 4), scheme_res_props.BoundingBox);
+            subSceneRotated = imresize(subSceneRotated, scaleF);
+            sceneMaskRotated = imresize(sceneMaskRotated, scaleF);
+            subSceneFR = imresize(subSceneFR, scaleF);
+            sceneMaskFR = imresize(sceneMaskFR, scaleF);
+                  
+            max_FR = -1;
+            processFR = imresize(sceneMaskFR_crop, [size(subSchemeMask,1) size(subSchemeMask,2)]);
+            processR = imresize(sceneMaskRotated_crop, [size(subSchemeMask,1) size(subSchemeMask,2)]);
             
-            imRotated = imrotate(subImage, -(scheme_res_props.MaxFeretAngle - scene_res_props.MaxFeretAngle));
-            imRotated = imresize(imRotated, scaleF);
+            max_intersection = 0;
+            for i = 0:3    
+                intersection = sum(sum(imrotate(processFR, i * 90, "crop") .* subSchemeMask));
+                if (intersection > max_intersection)
+                    max_intersection = intersection;
+                    max_index = i;
+                end
+            end
             
-            figure
-            subplot(1, 2, 1), imshow(im
+            max_intersection = 0;
+            for i = 0:3    
+                intersection = sum(sum(imrotate(processFR, i * 90, "crop") .* subSchemeMask));
+                if (intersection > max_intersection)
+                    max_intersection = intersection;
+                    max_index = i;
+                end
+            end
             
+            
+            
+                       
+            if (sum(sum(processFR .* subSchemeMask)) > sum(sum(processR .* subSchemeMask)) && sum(sum(processFR .* subSchemeMask)) > sum(sum(processRF .* subSchemeMask)))
+                piece = color_region(subSceneFR, sceneMaskFR);
+                finalMask = sceneMaskFR;
+            elseif (sum(sum(processR .* subSchemeMask)) > sum(sum(processFR .* subSchemeMask)) && sum(sum(processR .* subSchemeMask)) > sum(sum(processRF .* subSchemeMask)))
+                piece = color_region(subSceneRotated, sceneMaskRotated);
+                finalMask = sceneMaskRotated;
+            end
+               
             % Translation
-%             up = round(scheme_res_props.Centroid(2) - size(imRotated, 1) / 2);
-%             bottom = round(scheme_res_props.Centroid(2) + size(imRotated, 1) / 2);
-%             left = round(scheme_res_props.Centroid(1) - size(imRotated, 2) / 2);
-%             right = round(scheme_res_props.Centroid(1) + size(imRotated, 2) / 2);
-%             
-%             sup = imscheme;
-%             sup(up:bottom-1, left:right-1) = imRotated;
+            up = round(scheme_res_props.Centroid(2) - size(piece, 1) / 2);
+            bottom = round(scheme_res_props.Centroid(2) + size(piece, 1) / 2);
+            left = round(scheme_res_props.Centroid(1) - size(piece, 2) / 2);
+            right = round(scheme_res_props.Centroid(1) + size(piece, 2) / 2);
+            
+            sup = imschemergb;
+            sup(up:bottom-1, left:right-1, :) = sup(up:bottom-1, left:right-1, :) .* double(1 - finalMask);
+            sup(up:bottom-1, left:right-1, :) = sup(up:bottom-1, left:right-1, :) + piece;
+            %figure, imshow(sup)
         end    
     end
+end
+
+function region = color_region(im, mask)
+    mask3 = double(repmat(mask,[1,1,3]));
+    region = im2double(im) .* mask3;
+    %figure, imshow(region);
 end
