@@ -1,11 +1,14 @@
 clear all;
 close all;
 
+scheme_name = "S03.jpg";
+scene_name = "P02.jpg";
+
 load("classifier_bayes.mat");
 load("classifier_knn.mat");
 
-% SCENA
-image = imread("P06.jpg");
+% SCENE
+image = imread(scene_name);
 imrgb= imresize(image, 1);
 R = imrgb(:,:,1);
 G = imrgb(:,:,2);
@@ -28,8 +31,6 @@ predicted = imerode(predicted, se);
 se = strel("square", 15);
 
 predicted = imdilate(predicted, se);
-
-
 
 labeled_scene = bwlabel(predicted);
 scene_labels = unique(labeled_scene);
@@ -59,7 +60,7 @@ for i = 2:length(scene_labels)
 end
 
 % SCHEMA
-imschemergb = im2double(imread("S04.jpg"));
+imschemergb = im2double(imread(scheme_name));
 imscheme = rgb2gray(imschemergb);
 mask = imscheme > 0.39;
 mask = medfilt2(mask, [7 7]);
@@ -111,10 +112,13 @@ for i=1:length(scheme_props)
 end
 
 final_scheme = imschemergb;
+already_used = false(length(scene_predicted));
 
 for i=1:length(scheme_predicted)
     for j=1:length(scene_predicted)
-        if(scheme_predicted(i, 5) == scene_predicted(j, 5))
+        if(scheme_predicted(i, 5) == scene_predicted(j, 5) && already_used(j) == false)
+            already_used(j) = true;
+           
             scene_res_props = regionprops(labeled_scene == scene_predicted(j, 4), "BoundingBox", "MaxFeretProperties");
             scheme_res_props = regionprops(labeled_scheme == scheme_predicted(i, 4), "BoundingBox", "MaxFeretProperties", "Centroid");
                     
@@ -152,7 +156,7 @@ for i=1:length(scheme_predicted)
             
             max_intersection_FR = 0;
             for i = 0:3    
-                intersection = sum(sum(imrotate(processFR, i * 90, "crop") .* subSchemeMask));
+                intersection = sum(sum(imrotate(processFR, i * 90, "crop") .* subSchemeMask)) / sum(sum(processFR));
                 if (intersection > max_intersection_FR)
                     max_intersection_FR = intersection;
                     max_FR = i;
@@ -161,7 +165,7 @@ for i=1:length(scheme_predicted)
             
             max_intersection_R = 0;
             for i = 0:3    
-                intersection = sum(sum(imrotate(processR, i * 90, "crop") .* subSchemeMask));
+                intersection = sum(sum(imrotate(processR, i * 90, "crop") .* subSchemeMask)) / sum(sum(processR));
                 if (intersection > max_intersection_R)
                     max_intersection_R = intersection;
                     max_R = i;
