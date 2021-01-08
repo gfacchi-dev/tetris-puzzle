@@ -12,7 +12,7 @@ classifier_bayes = fitcnb(train_values, train_labels);
 
 % Shapes properties
 % KNN Classifier
-[train_props_values, train_props_labels] = get_training_data();
+[train_props_values, train_props_labels] = training_shapes();
 classifier_knn = fitcknn(train_props_values, train_props_labels, 'NumNeighbors' , 1);
 
 save("classifier_bayes.mat", "classifier_bayes");
