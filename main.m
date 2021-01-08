@@ -4,7 +4,7 @@ close all;
 scheme_name = "S06.jpg";
 scene_name = "P02.jpg";
 
-% classifiers are generated in training.m 
+% classifiers are generated in training.m
 load("classifier_bayes.mat");
 load("classifier_knn.mat");
 
