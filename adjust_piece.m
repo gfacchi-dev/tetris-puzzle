@@ -53,9 +53,10 @@ function [final_image, final_mask] = adjust_piece(scheme_mask, scene_image, scen
     
     % Force the piece of the scene to be the same size of the scheme one,
     % in order to make comparison
+    piece_r_crop = removeBorder(piece_r_crop);
     processFR = imresize(piece_fr_crop, [size(scheme_mask,1) size(scheme_mask,2)]);
     processR = imresize(piece_r_crop, [size(scheme_mask,1) size(scheme_mask,2)]);
-  
+    
     for k = 0:3    
         intersection = sum(sum(imrotate(processFR, k * 90, "crop") .* scheme_mask)) / sum(sum(processFR));
         if (intersection > max_intersection_FR)

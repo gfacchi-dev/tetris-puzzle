@@ -1,8 +1,15 @@
-clear all;
+for p=1:10
+    clear all;
 close all;
 
 scheme_name = "./schemes/S06.jpg";
-scene_name = "./scenes/P06.jpg";
+if(p==10)
+    scene_name = "./scenes/P"+p+".jpg";
+
+else
+    scene_name = "./scenes/P0"+p+".jpg";
+
+end
 
 % classifiers are generated in training.m
 load("classifier_bayes.mat");
@@ -131,4 +138,5 @@ for i=1:length(scheme_predicted)
     end
 end
 
-figure, imshow(final_scheme)
+figure, subplot(, imshow(final_scheme)
+end

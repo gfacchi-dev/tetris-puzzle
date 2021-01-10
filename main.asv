@@ -2,7 +2,7 @@ clear all;
 close all;
 
 scheme_name = "./schemes/S06.jpg";
-scene_name = "./scenes/P06.jpg";
+scene_name = "./scenes/P05.jpg";
 
 % classifiers are generated in training.m
 load("classifier_bayes.mat");
@@ -106,6 +106,7 @@ for i=1:length(scheme_predicted)
             
             % Scheme CROP
             subscheme_mask = imcrop(labeled_scheme == scheme_predicted(i, 4), scheme_res_props.BoundingBox);        
+            figure, subplot(1 2 1), imsh                                                    
             [final_image, final_mask] = adjust_piece(subscheme_mask, subscene_image, subscene_mask);
             
             piece = color_region(final_image, final_mask);
