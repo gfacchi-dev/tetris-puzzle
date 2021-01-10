@@ -53,7 +53,8 @@ function [final_image, final_mask] = adjust_piece(scheme_mask, scene_image, scen
     
     % Force the piece of the scene to be the same size of the scheme one,
     % in order to make comparison
-    piece_r_crop = removeBorder(piece_r_crop);
+    piece_r_crop = remove_border(piece_r_crop);
+    piece_fr_crop = remove_border(piece_fr_crop);
     processFR = imresize(piece_fr_crop, [size(scheme_mask,1) size(scheme_mask,2)]);
     processR = imresize(piece_r_crop, [size(scheme_mask,1) size(scheme_mask,2)]);
     

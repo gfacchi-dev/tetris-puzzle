@@ -1,8 +1,8 @@
 clear all;
 close all;
 
-scheme_name = "./schemes/S06.jpg";
-scene_name = "./scenes/P06.jpg";
+scheme_name = "./schemes/S01.jpg";
+scene_name = "./scenes/P01.jpg";
 
 % classifiers are generated in training.m
 load("classifier_bayes.mat");
@@ -63,7 +63,7 @@ for i = 3:length(scheme_labels)
     subImage = padarray(subImage, [100 100], 0 , 'both');
   
     corners = get_corners(subImage);
-    im_props = regionprops(subImage,  "Eccentricity", "Area", "Perimeter");
+    im_props = regionprops(subImage, "Eccentricity", "Area", "Perimeter");
     scheme_props = [scheme_props;  corners.Count/8 im_props.Eccentricity  im_props.Area/im_props.Perimeter^2 scheme_labels(i)];
 end
 
