@@ -1,6 +1,6 @@
 % TRAINING 
-im1 = imread("R01.jpg");
-im2 = imread("R02.jpg");
+im1 = imread("training/R01.jpg");
+im2 = imread("training/R02.jpg");
 
 % Pixel-Based (colors)
 % Bayesian Classifier

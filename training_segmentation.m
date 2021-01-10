@@ -19,7 +19,7 @@ function [values, labels] = training_segmentation(imrgb)
     imf = c1 + c2 + c3 + c4 + c5;
     se = strel("square", 20);
     imf = imclose(imf, se);
-    imf = imerode(imf, se);
+    imf = imopen(imf, se);
     imf = medfilt2(imf,[7 7]);
     labels = bwlabel(imf);
     labels(labels~=0) = 1;

@@ -2,7 +2,7 @@ clear all;
 close all;
 
 scheme_name = "./schemes/S01.jpg";
-scene_name = "./scenes/P01.jpg";
+scene_name = "./scenes/P10.jpg";
 
 % classifiers are generated in training.m
 load("classifier_bayes.mat");
@@ -29,7 +29,7 @@ predicted = medfilt2(predicted, [21 21]);
 % opening to remove possibile residual white regions that are not pieces
 se = strel("square", 50);
 predicted = imerode(predicted, se);
-se = strel("square", 15); % 15
+se = strel("square", 50); % 15
 predicted = imdilate(predicted, se);
 
 labeled_scene = bwlabel(predicted);
@@ -44,7 +44,7 @@ for i = 2:length(scene_labels)
    
     corners = get_corners(subImage);
     im_props = regionprops(subImage, "Eccentricity", "Area", "Perimeter");
-    scene_props = [scene_props;  corners.Count/8 im_props.Eccentricity  im_props.Area/im_props.Perimeter^2 scene_labels(i)];   
+    scene_props = [scene_props; corners.Count/8 im_props.Eccentricity im_props.Area/im_props.Perimeter^2 scene_labels(i)];   
 end
 
 % SCHEME read, binarization and noise removal

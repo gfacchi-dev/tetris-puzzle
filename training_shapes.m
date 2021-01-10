@@ -6,7 +6,7 @@ function [props, labels] = training_shapes()
     labels = [];
      for i = 3:length(file_list)
         if(not(strcmp(file_list(i).name, ".")) && not(strcmp(file_list(i).name,"..")))
-            path = "./shapes/" + file_list(i).name;
+            path = "./training_shapes/" + file_list(i).name;
             % Associate a label in relation to filename
             lettera = char(file_list(i).name);
             lettera = lettera(1);
