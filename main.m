@@ -1,8 +1,8 @@
 clear all;
 close all;
 
-scheme_name = "./schemes/S01.jpg";
-scene_name = "./scenes/P10.jpg";
+scheme_name = "./schemes/S06.jpg";
+scene_name = "./scenes/P04.jpg";
 
 % classifiers are generated in training.m
 load("classifier_bayes.mat");
@@ -27,9 +27,9 @@ predicted = imclose(predicted, se);
 % median filter to remove scattered random points from background
 predicted = medfilt2(predicted, [21 21]); 
 % opening to remove possibile residual white regions that are not pieces
-se = strel("square", 50);
+se = strel("square", 25);
 predicted = imerode(predicted, se);
-se = strel("square", 50); % 15
+se = strel("square", 25);
 predicted = imdilate(predicted, se);
 
 labeled_scene = bwlabel(predicted);
@@ -41,7 +41,7 @@ for i = 2:length(scene_labels)
     subImage = imcrop(labeled_scene == scene_labels(i),...
         regionprops(labeled_scene == scene_labels(i), "BoundingBox").BoundingBox);
     subImage = padarray(subImage, [100 100], 0 , "both");
-   
+    
     corners = get_corners(subImage);
     im_props = regionprops(subImage, "Eccentricity", "Area", "Perimeter");
     scene_props = [scene_props; corners.Count/8 im_props.Eccentricity im_props.Area/im_props.Perimeter^2 scene_labels(i)];   

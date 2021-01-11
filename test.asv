@@ -1,0 +1,9 @@
+clear all;
+close all;
+
+load("classifier_knn");
+
+[gt_props, gt_labels] = load_shapes("./test/");
+
+pred_labels = predict(classifier_knn, gt_props);
+confm
